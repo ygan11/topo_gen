@@ -56,7 +56,6 @@ def calculate_node_count(k, k_shortest_paths):
 
 
 def init_rnode_resource_info(G_complete, G_repeater):#, node_count, k_shortest_paths, k):
-    # pass
 
     total_resource_num = 1000
 

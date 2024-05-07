@@ -19,9 +19,7 @@ def iterate_kms_ga(endnodes_graph_file):
     # 读取endnodes_graph_file
     G, endnodes = read_endnodes_init_grid_graph_with_grid_edges(endnodes_graph_file)
     # print("The number of endnodes in the graph:", len(endnodes))
-    # pos = nx.get_node_attributes(G, 'pos')
-    # nx.draw(G, pos, with_labels=False, node_size=10)
-    # plt.show()
+    plot_and_metrics(G)
     # 获取初始图
     P = get_start_graph(G)
     # 优化repeater位置
@@ -35,7 +33,9 @@ def iterate_kms_ga(endnodes_graph_file):
     num_clusters = repeater_num - 1
 
     min_P = P
-    while num_clusters > (repeater_num / 3):
+    continues_failures_count = 0
+    # while num_clusters > (repeater_num / 3):
+    while num_clusters > 0:
         # Perform clustering
         # clustering_repeater(num_clusters, P, repeater_positions)
 
@@ -46,7 +46,12 @@ def iterate_kms_ga(endnodes_graph_file):
         plot_and_metrics(P)
 
         if is_legal(P):
+            continues_failures_count = 0
             min_P = P
+        else:
+            continues_failures_count += 1
+            if continues_failures_count > 4:
+                break
 
         if num_clusters < min_repeaters_num:
             min_repeaters_num = num_clusters
@@ -223,7 +228,7 @@ def clustering_repeater(num_clusters, T, repeater_positions):
 def plot_and_metrics(P):
     # 打印指标
     endnodes = [node for node in P.nodes if P.nodes[node]['type'] == 'endnode']
-    max_distance = 0;
+    max_distance = 0
     max_rr = 0
     max_er = 0
     best_distance = 0
@@ -234,7 +239,8 @@ def plot_and_metrics(P):
         u_pos = P.nodes[u]['pos']
         v_pos = P.nodes[v]['pos']
         distance = math.sqrt(math.pow(u_pos[0] - v_pos[0], 2) + math.pow(u_pos[1] - v_pos[1], 2))
-        if u < len(endnodes):
+        #if u < len(endnodes):
+        if P.nodes[u]['type'] == 'endnode' or P.nodes[v]['type'] == 'endnode':
             if distance > l_er:
                 count_illegal_er += 1
             if distance > max_er:
@@ -260,13 +266,13 @@ def plot_and_metrics(P):
 
     # 可视化
     # define the color map
-    # color_map = {'endnode': 'blue', 'repeater': 'red'}
-    # # draw the graph
-    # pos = nx.get_node_attributes(P, 'pos')
-    # node_colors = [color_map[P.nodes[n]['type']] for n in P.nodes()]
-    # edge_colors = [color_map[P.edges[e]['type']] for e in P.edges()]
-    # nx.draw(P, pos, with_labels=False, node_color=node_colors, edge_color=edge_colors, width=0.5, node_size=10)
-    # plt.show()
+    color_map = {'endnode': 'blue', 'repeater': 'red'}
+    # draw the graph
+    pos = nx.get_node_attributes(P, 'pos')
+    node_colors = [color_map[P.nodes[n]['type']] for n in P.nodes()]
+    edge_colors = [color_map[P.edges[e]['type']] for e in P.edges()]
+    nx.draw(P, pos, with_labels=False, node_color=node_colors, edge_color=edge_colors, width=0.5, node_size=10)
+    plt.show()
 
 
 def optimize_repeater_pos(P, endnodes, l_er, l_rr):

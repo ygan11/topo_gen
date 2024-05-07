@@ -3,12 +3,7 @@ import matplotlib.pyplot as plt
 import json
 import math
 
-# Generate the grid network
-map_size = 1000
-grid_size = 15
-step_size = map_size / grid_size
-l_rr = 200#step_size * 4
-l_er = 150#step_size * 3
+from config import *
 
 
 def convert_networkx_graph_to_string(G, G_repeater, filename):
@@ -30,14 +25,14 @@ def convert_networkx_graph_to_string(G, G_repeater, filename):
         counter = len(G.nodes()) - len(G_repeater.nodes())
         for node in G.nodes():
             if G.nodes[node]["type"] == "endnode":
-                assert "num_qubits" in G.nodes[node]
-                f.write(f'{G.nodes[node]["num_qubits"]} {G.nodes[node]["pos"][0]} {G.nodes[node]["pos"][1]}\n')
+                assert "num_qubits" in G.nodes[node] 
+                f.write(f'{G.nodes[node]["num_qubits"]} {G.nodes[node]["pos"][0]} {G.nodes[node]["pos"][1]} 0\n') # 0 means endnode
 
         for node in G_repeater.nodes():
             if G_repeater.nodes[node]["type"] == "repeater":
                 assert "num_qubits" in G_repeater.nodes[node]
                 f.write(
-                    f'{G_repeater.nodes[node]["num_qubits"]} {G_repeater.nodes[node]["pos"][0]} {G_repeater.nodes[node]["pos"][1]}\n')
+                    f'{G_repeater.nodes[node]["num_qubits"]} {G_repeater.nodes[node]["pos"][0]} {G_repeater.nodes[node]["pos"][1]} 1\n')
 
         # Create a mapping from node to index
         rnode_to_counter = {}
@@ -53,7 +48,7 @@ def convert_networkx_graph_to_string(G, G_repeater, filename):
                 n1 = rnode_to_counter[n1]
             if G.nodes[n2]["type"] == "repeater":
                 n2 = rnode_to_counter[n2]
-            f.write(f'{n1} {n2} 999\n')
+            f.write(f'{n1} {n2} 100\n')
 
             # for edge in G_repeater.edges():
         #     if G_repeater.edges[edge]["type"] == "repeater":
@@ -74,7 +69,8 @@ def extract_endnode_file_name(filename):
 
 
 def graph_plot(G):
-    color_map = {'endnode': 'blue', 'repeater': 'red'}
+    # color_map = {'endnode': 'blue', 'repeater': 'gold'}
+    color_map = {'endnode': '#10739E', 'repeater': '#B40504'}
     # draw the graph
     pos = nx.get_node_attributes(G, 'pos')
     node_colors = [color_map[G.nodes[n]['type']] for n in G.nodes()]
@@ -237,7 +233,6 @@ def read_endnodes_init_grid_graph_without_edges(endnodes_graph_file):
     return G, endnodes
 
 
-
 def read_endnodes_init_grid_graph_with_grid_edges(endnodes_graph_file):
     # Remove all edges
     # grid.remove_edges_from(G.edges())
@@ -306,3 +301,26 @@ def read_endnodes_init_grid_graph_with_grid_edges(endnodes_graph_file):
     return G, endnodes
 
 
+# def total_cost(G, print: bool = False):
+def total_cost(G):
+    total_cost = 0
+    for edge in G.edges():
+        total_cost += G[edge[0]][edge[1]]['dis'] * unit_fiber_cost
+
+    for node in G.nodes():
+        if G.nodes[node]['type'] == 'repeater':
+            total_cost += unit_repeater_cost
+    # if print:
+    print(f'Total cost: {total_cost}')
+    print(f'Number of repeaters: {len([node for node in G.nodes if G.nodes[node]["type"] == "repeater"])}')
+    print(f'Total link length: {sum([G[edge[0]][edge[1]]["dis"] for edge in G.edges()])}')
+
+    return total_cost
+
+
+def add_dis_attr_to_edges(G):
+    for edge in G.edges():
+        G[edge[0]][edge[1]]['dis'] = ((G.nodes[edge[0]]['pos'][0] - G.nodes[edge[1]]['pos'][0]) ** 2 + (
+                G.nodes[edge[0]]['pos'][1] - G.nodes[edge[1]]['pos'][1]) ** 2) ** 0.5
+        
+    return G
