@@ -3,11 +3,12 @@
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 from endnodes_gen import endnode_graph_gen
-from iter_kms_ga import iterate_kms_ga
+# from iter_kms_ga import iterate_kms_ga
+from iter_kms_ga import KmsGa
 from grid_steiner import construct_steiner_tree
 from waxman_topo_gen import construct_waxman
 import os
-
+from demand_gen import Demand
 
 
 # Press the green button in the gutter to run the script.
@@ -39,7 +40,10 @@ from multiprocessing import Pool
 def process_file(f):
     # construct_steiner_tree(f)
     # print("Steiner tree generated for", f)
-    iterate_kms_ga(f)
+    # iterate_kms_ga(f)
+    d = Demand(f, 10)
+    kms = KmsGa([])
+    kms.iterate_kms_ga(f)
     print("KMS GA generated for", f)
     # construct_waxman(f, 5, 1000)
     # print("Waxman graph generated for", f)

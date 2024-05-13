@@ -4,6 +4,7 @@ import json
 import math
 
 from config import *
+from itertools import islice
 
 
 def convert_networkx_graph_to_string(G, G_repeater, filename):
@@ -81,8 +82,9 @@ def graph_plot(G):
     #labels_qubits = {n: G.nodes[n]['num_qubits'] for n in G.nodes() if G.nodes[n]['type'] == 'repeater'}
     labels_id = {n: n for n in G.nodes()}
     # nx.draw(G, pos, with_labels=True, node_color=node_colors, edge_color=edge_colors, width=0.5, node_size=10, labels=labels_qubits)
-    nx.draw(G, pos, with_labels=False, node_color=node_colors, edge_color=edge_colors, width=0.5, node_size=10)
-    # nx.draw(G, pos, with_labels=False, node_color='blue', edge_color='black', width=0.5, node_size=10)
+    # nx.draw(G, pos, with_labels=False, node_color=node_colors, edge_color=edge_colors, width=0.5, node_size=10)
+    label_endnodes = {n: n for n in G.nodes() if G.nodes[n]['type'] == 'endnode'}
+    nx.draw(G, pos, with_labels=True, labels=label_endnodes, node_color=node_colors, edge_color=edge_colors, width=0.5, node_size=10)
     plt.show()
     # Pause the program until the plot is closed
     #plt.savefig('graph.png')
@@ -90,53 +92,54 @@ def graph_plot(G):
 
 
 def yen_k_shortest_paths(G, source, target, k):
-    # Compute the shortest path using Dijkstra's algorithm
-    graph = G.copy()
-    # add 'dis' attribute to each edge, which is the distance between the two end nodes
-    for edge in graph.edges():
-        graph[edge[0]][edge[1]]['dis'] = ((graph.nodes[edge[0]]['pos'][0] - graph.nodes[edge[1]]['pos'][0]) ** 2 + (
-                graph.nodes[edge[0]]['pos'][1] - graph.nodes[edge[1]]['pos'][1]) ** 2) ** 0.5
+    return list(islice(nx.shortest_simple_paths(G, source, target, weight='dis'), k)) 
+    # # Compute the shortest path using Dijkstra's algorithm
+    # graph = G.copy()
+    # # add 'dis' attribute to each edge, which is the distance between the two end nodes
+    # for edge in graph.edges():
+    #     graph[edge[0]][edge[1]]['dis'] = ((graph.nodes[edge[0]]['pos'][0] - graph.nodes[edge[1]]['pos'][0]) ** 2 + (
+    #             graph.nodes[edge[0]]['pos'][1] - graph.nodes[edge[1]]['pos'][1]) ** 2) ** 0.5
 
-    shortest_path = nx.shortest_path(graph, source, target, weight='dis')
-    A = [shortest_path]
-    B = []
+    # shortest_path = nx.shortest_path(graph, source, target, weight='dis')
+    # A = [shortest_path]
+    # B = []
 
-    for i in range(1, k):
-        for j in range(len(A[i - 1]) - 1):
-            spur_node = A[i - 1][j]
-            root_path = A[i - 1][:j + 1]
+    # for i in range(1, k):
+    #     for j in range(len(A[i - 1]) - 1):
+    #         spur_node = A[i - 1][j]
+    #         root_path = A[i - 1][:j + 1]
 
-            # Remove edges from the graph that are part of previous shortest paths
-            for path in A:
-                if len(path) > j and root_path == path[:j + 1]:
-                    graph.remove_edge(path[j], path[j + 1])
+    #         # Remove edges from the graph that are part of previous shortest paths
+    #         for path in A:
+    #             if len(path) > j and root_path == path[:j + 1]:
+    #                 graph.remove_edge(path[j], path[j + 1])
 
-            # Calculate the spur path from the spur node to the target
-            spur_path = nx.shortest_path(graph, spur_node, target, weight='dis')
+    #         # Calculate the spur path from the spur node to the target
+    #         spur_path = nx.shortest_path(graph, spur_node, target, weight='dis')
 
-            # Combine the root path and spur path to get a new candidate path
-            candidate_path = root_path + spur_path[1:]
+    #         # Combine the root path and spur path to get a new candidate path
+    #         candidate_path = root_path + spur_path[1:]
 
-            # Add the candidate path to the list of potential k-shortest paths
-            B.append(candidate_path)
+    #         # Add the candidate path to the list of potential k-shortest paths
+    #         B.append(candidate_path)
 
-            # Restore the removed edges to the graph
-            for path in A:
-                if len(path) > j and root_path == path[:j + 1]:
-                    graph.add_edge(path[j], path[j + 1], dis=G[path[j]][path[j + 1]]['dis'])
+    #         # Restore the removed edges to the graph
+    #         for path in A:
+    #             if len(path) > j and root_path == path[:j + 1]:
+    #                 graph.add_edge(path[j], path[j + 1], dis=G[path[j]][path[j + 1]]['dis'])
 
-        if len(B) == 0:
-            # No more candidate paths to explore
-            break
+    #     if len(B) == 0:
+    #         # No more candidate paths to explore
+    #         break
 
-        # Sort the candidate paths by their total weight
-        B.sort(key=lambda path: nx.path_weight(graph, path, weight='dis'), reverse=False)
+    #     # Sort the candidate paths by their total weight
+    #     B.sort(key=lambda path: nx.path_weight(graph, path, weight='dis'), reverse=False)
 
-        # Add the shortest candidate path to the list of k-shortest paths
-        A.append(B[0])
-        B.pop(0)
+    #     # Add the shortest candidate path to the list of k-shortest paths
+    #     A.append(B[0])
+    #     B.pop(0)
 
-    return A
+    # return A
 
 
 def repeaters_graph(G):
@@ -289,7 +292,7 @@ def read_endnodes_init_grid_graph_with_grid_edges(endnodes_graph_file):
         G.add_edge(grid_G_node_mappling[edges[0]], grid_G_node_mappling[edges[1]], type='repeater', dis=dis)
 
     print(f'Number of nodes in G: {len(G.nodes)}')
-    # graph_plot(G)
+    graph_plot(G)
 
 
 
