@@ -327,3 +327,38 @@ def add_dis_attr_to_edges(G):
                 G.nodes[edge[0]]['pos'][1] - G.nodes[edge[1]]['pos'][1]) ** 2) ** 0.5
         
     return G
+
+
+
+def graph_statistics(G):
+    endnodes = [node for node in G.nodes if G.nodes[node]['type'] == 'endnode']
+    print(f'Diameter: {nx.diameter(G)}')
+    # only count the shortest path length between endnodes
+
+    # print(f'Average shortest path length: {nx.average_shortest_path_length(G, weight='dis')}')
+    print(f'Average hop count: {nx.average_shortest_path_length(G)}')
+    print(f'Average degree: {sum([G.degree(node) for node in G.nodes]) / len(G.nodes)}')
+    print(f'Average degree of repeaters: {sum([G.degree(node) for node in G.nodes if G.nodes[node]["type"] == "repeater"]) / len([node for node in G.nodes if G.nodes[node]["type"] == "repeater"])}')
+    #print(f'Average degree of repeaters only connect to other repeaters: {sum([G.degree(node) for node in G.nodes if G.nodes[node]["type"] == "repeater" and all([G.nodes[neighbor]["type"] == "repeater" for neighbor in G.neighbors(node)])]) / len([node for node in G.nodes if G.nodes[node]["type"] == "repeater" and all([G.nodes[neighbor]["type"] == "repeater" for neighbor in G.neighbors(node)])])}')
+    
+    repeaters = [node for node in G.nodes if G.nodes[node]['type'] == 'repeater']
+    repeater_edges = [edge for edge in G.edges if G.edges[edge]['type'] == 'repeater']
+    print(f'Average degree of repeaters edges: {len(repeater_edges) / len(repeaters)}')
+    # Get the max number of degree that a repeater node conncets to other repeater nodes
+    max_degree = 0
+    min_degree = 100
+    # Print all node and its edges
+    for repeater in repeaters:
+        nbrs = G.neighbors(repeater)
+        repeater_edges = 0
+        for nbr in nbrs:
+            if G.nodes[nbr]['type'] == 'repeater':
+                repeater_edges += 1
+        if repeater_edges > max_degree:
+            max_degree = repeater_edges
+        if repeater_edges < min_degree:
+            min_degree = repeater_edges
+    print(f'Maximum degree of repeater edges: {max_degree}')
+    print(f'Minimum degree of repeater edges: {min_degree}')
+    
+

@@ -15,7 +15,7 @@ import multiprocessing
 
 from utils import read_endnodes_init_grid_graph_without_edges, l_er, l_rr, extract_endnode_file_name, graph_plot, \
     read_endnodes_init_grid_graph_with_grid_edges
-from utils import graph_plot
+from utils import graph_plot, graph_statistics
 from demand_gen import Demand
 from config import map_size, step_size
 
@@ -33,8 +33,8 @@ class KmsGa:
         # print("The number of endnodes in the graph:", len(endnodes))
         self.plot_and_metrics(G)
         # 获取初始图
-        #G = self.remove_repeaters_not_included_in_convex_hull(G, endnodes)
-        G = self.remove_repeaters_not_included_in_concave_hull(G, endnodes)
+        G = self.remove_repeaters_not_included_in_convex_hull(G, endnodes)
+        # G = self.remove_repeaters_not_included_in_concave_hull(G, endnodes)
         self.plot_and_metrics(G)
 
         G = self.copy_graph_with_reindex(G)
@@ -63,7 +63,7 @@ class KmsGa:
             print("num_clusters:", num_clusters)
             self.optimize_repeater_pos(P, endnodes, l_er, l_rr)
             self.plot_and_metrics(P)
-
+            graph_statistics(P)
             if self.is_legal(P):
                 continues_failures_count = 0
                 min_P = P
@@ -90,6 +90,7 @@ class KmsGa:
         self.optimize_repeater_pos_t(min_P, endnodes, l_er, l_rr)
         print("final topology:")
         self.plot_and_metrics(min_P)
+
         # Save this graph to a file
         # with open('./source/topologies/topo_candi/graph0' + '.json', 'w') as file:
         dirPath = '../dist/topos/'
@@ -102,6 +103,32 @@ class KmsGa:
 
     # Get a start graph quickly for the optimization from initial grid graph
     def get_start_graph(self, G):
+        """
+        # Do Delaunay Triangulation for all repeater nodes:
+        # Get all repeater nodes
+        repeater_positions = []
+        for node in G.nodes:
+            if G.nodes[node]['type'] == 'repeater':
+                repeater_positions.append(G.nodes[node]['pos'])
+        # Do Delaunay Triangulation
+        points = np.array(repeater_positions)
+        tri = Delaunay(points)
+        # Add edges to G
+        for triangle in tri.simplices:
+            for i in range(3):
+                u = triangle[i]
+                v = triangle[(i + 1) % 3]
+                pos1 = G.nodes[u]['pos']
+                pos2 = G.nodes[v]['pos']
+                distance = math.sqrt((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2)
+                if G.nodes[u]['type'] == 'repeater' and G.nodes[v]['type'] == 'repeater':
+                    if distance <= l_rr:
+                        G.add_edge(u, v, type='repeater', dis=distance)
+
+        graph_plot(G)
+        print("------------------------- !!!!!!!!!!!!1 ------------------", len(repeater_positions))
+        """
+
         # nx.draw(G, with_labels=False, node_size=10)
         node_positions = []
         for node in G.nodes:
@@ -179,7 +206,7 @@ class KmsGa:
             #P_temp = clustering_repeater(min_repeaters_num_temp, P_temp, repeater_positions_temp)
             P_temp = self.construct_new_graph(P_temp, min_repeaters_num_temp)
             self.optimize_repeater_pos_light(P_temp, [node for node in P_temp.nodes if P_temp.nodes[node]['type'] == 'endnode'], l_er, l_rr)
-
+            graph_statistics(P_temp)
             self.plot_and_metrics(P_temp)
             print("for fine granularity, min_repeaters_num_temp:", min_repeaters_num_temp)
 

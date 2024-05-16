@@ -1,10 +1,10 @@
 
 # Generate the grid network
-map_size = 5000#1000
-grid_size = 17#15
+map_size = 1000#1000
+grid_size = 15#15
 step_size = map_size / grid_size
-l_rr = 400#step_size * 4
-l_er = 400#step_size * 3
+l_rr = 200#step_size * 4
+l_er = 200#step_size * 3
 
 
 max_single_dis = 150#step_size * 3
