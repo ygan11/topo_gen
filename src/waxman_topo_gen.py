@@ -7,7 +7,7 @@ from itertools import combinations
 from math import sqrt, exp
 import json
 
-from utils import extract_endnode_file_name, graph_plot
+from utils import extract_endnode_file_name, graph_plot, abs_file_path
 
 def dyn_search(x_min, x_max, y_target, f, f_is_increasing, precision):
     x = (x_min + x_max) / 2
@@ -32,7 +32,7 @@ def construct_waxman(endnodes_graph_file, degree, edge_len):
     
 
     # Read the graph from the file
-    dirPath = '../dist/topos/'
+    dirPath = abs_file_path + '/dist/topos/'
 
     # Split the endnodes_graph_file to get the number of endnodes and the index of the topo
     endnode_num, topo_idx = extract_endnode_file_name(endnodes_graph_file)
@@ -88,7 +88,7 @@ def construct_waxman(endnodes_graph_file, degree, edge_len):
     beta = dyn_search(0.0, 20.0, degree, f, False, 0.2)
     
     
-    graph_plot(G)
+    # graph_plot(G)
 
     # Ensuring connectivity
     for cc in sorted(nx.connected_components(G), key=len, reverse=True)[1:]:
@@ -100,7 +100,8 @@ def construct_waxman(endnodes_graph_file, degree, edge_len):
             print(f"Connecting {nearest} to {to_connect}")
     # print(f"Is G connected: {nx.is_connected(G)}")
     assert nx.is_connected(G)
-    print(f"Average degree: {sum(G.degree(node) for node in G.nodes()) / len(G.nodes())}")
+    print(f"Average degree: {sum(G.degree(node) for node in G.nodes()) / len(G.nodes()) / 2}")
+    print(f"Average degree: {nx.average_degree_connectivity(G)}")
     # Ensuring minimum degree
     for node in G.nodes():
         if G.degree(node) < degree:

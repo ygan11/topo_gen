@@ -5,7 +5,7 @@ from utils import *
 
 
 def allocate_resource(topo_file_name, k, topo_allocated_file_name):
-    readDirName = '../dist/topos/'
+    readDirName = abs_file_path + '/dist/topos/'
     with open(readDirName + topo_file_name, 'r') as file:
         graph_data = json.load(file)
     G = nx.node_link_graph(graph_data)

@@ -17,13 +17,14 @@ from utils import read_endnodes_init_grid_graph_without_edges, l_er, l_rr, extra
     read_endnodes_init_grid_graph_with_grid_edges
 from utils import graph_plot, graph_statistics
 from demand_gen import Demand
-from config import map_size, step_size
+from config import map_size, step_size, abs_file_path
 
 
 class KmsGa:
-    def __init__(self, demands: Demand) -> None:
-        self.demands = demands
-        self.demands_list = demands.demands_list
+    def __init__(self) -> None:
+        pass
+        # self.demands = demands
+        # self.demands_list = demands.demands_list
 
 
     def iterate_kms_ga(self, endnodes_graph_file):
@@ -31,11 +32,11 @@ class KmsGa:
         G, endnodes = read_endnodes_init_grid_graph_with_grid_edges(endnodes_graph_file)
         
         # print("The number of endnodes in the graph:", len(endnodes))
-        self.plot_and_metrics(G)
+        ##-self.plot_and_metrics(G)
         # 获取初始图
         G = self.remove_repeaters_not_included_in_convex_hull(G, endnodes)
         # G = self.remove_repeaters_not_included_in_concave_hull(G, endnodes)
-        self.plot_and_metrics(G)
+        ##-self.plot_and_metrics(G)
 
         G = self.copy_graph_with_reindex(G)
         P = self.get_start_graph(G)
@@ -60,16 +61,16 @@ class KmsGa:
 
             P = self.construct_new_graph(P, num_clusters)
             # plot_and_metrics(P)
-            print("num_clusters:", num_clusters)
+            ##-print("num_clusters:", num_clusters)
             self.optimize_repeater_pos(P, endnodes, l_er, l_rr)
-            self.plot_and_metrics(P)
-            graph_statistics(P)
+            ##-self.plot_and_metrics(P)
+            ##-graph_statistics(P)
             if self.is_legal(P):
                 continues_failures_count = 0
                 min_P = P
             else:
                 continues_failures_count += 1
-                if continues_failures_count > 4:
+                if continues_failures_count > (6 - crt_rate):#4:
                     if crt_rate == 1:
                         break
                     else:
@@ -78,56 +79,32 @@ class KmsGa:
                         P = min_P
                         self.optimize_repeater_pos_t(P, endnodes, l_er, l_rr)#min_P
                         num_clusters = len([node for node in P.nodes if P.nodes[node]['type'] == 'repeater']) - crt_rate
-                        print("re-caculate from num_clusters:", num_clusters)
+                        ##-print("re-caculate from num_clusters:", num_clusters)
                         continue
                     # break
 
             if num_clusters < min_repeaters_num:
                 min_repeaters_num = num_clusters
             num_clusters -= crt_rate#1
-            print("current rate: ", crt_rate)
+            ##-print("current rate: ", crt_rate)
 
         self.optimize_repeater_pos_t(min_P, endnodes, l_er, l_rr)
-        print("final topology:")
-        self.plot_and_metrics(min_P)
+        ##-print("final topology:")
+        ##-self.plot_and_metrics(min_P)
 
         # Save this graph to a file
         # with open('./source/topologies/topo_candi/graph0' + '.json', 'w') as file:
-        dirPath = '../dist/topos/'
+        dirPath = abs_file_path + '/dist/topos/'
         endnode_num, topo_idx = extract_endnode_file_name(endnodes_graph_file)
-        # with open(dirPath + "deepPlace-" + str(endnode_num) + '-' + str(topo_idx) + '.json', 'w') as file:
-        #     json.dump(nx.node_link_data(min_P), file)
+        with open(dirPath + "deepPlace-" + str(endnode_num) + '-' + str(topo_idx) + '.json', 'w') as file:
+            json.dump(nx.node_link_data(min_P), file)
 
         return min_P
 
 
     # Get a start graph quickly for the optimization from initial grid graph
     def get_start_graph(self, G):
-        """
-        # Do Delaunay Triangulation for all repeater nodes:
-        # Get all repeater nodes
-        repeater_positions = []
-        for node in G.nodes:
-            if G.nodes[node]['type'] == 'repeater':
-                repeater_positions.append(G.nodes[node]['pos'])
-        # Do Delaunay Triangulation
-        points = np.array(repeater_positions)
-        tri = Delaunay(points)
-        # Add edges to G
-        for triangle in tri.simplices:
-            for i in range(3):
-                u = triangle[i]
-                v = triangle[(i + 1) % 3]
-                pos1 = G.nodes[u]['pos']
-                pos2 = G.nodes[v]['pos']
-                distance = math.sqrt((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2)
-                if G.nodes[u]['type'] == 'repeater' and G.nodes[v]['type'] == 'repeater':
-                    if distance <= l_rr:
-                        G.add_edge(u, v, type='repeater', dis=distance)
 
-        graph_plot(G)
-        print("------------------------- !!!!!!!!!!!!1 ------------------", len(repeater_positions))
-        """
 
         # nx.draw(G, with_labels=False, node_size=10)
         node_positions = []
@@ -135,7 +112,7 @@ class KmsGa:
             node_positions.append(list(G.nodes[node]['pos']))
         points = np.array(node_positions)
         tri = Delaunay(points)
-        print("number of nodes in the graph:", len(G.nodes))
+        ##-print("number of nodes in the graph:", len(G.nodes))
         # remove all edges from G
         # print("beofre remove edges:", G.edges())
         # plot_and_metrics(G)
@@ -150,15 +127,40 @@ class KmsGa:
                 distance = math.sqrt((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2)
                 if G.nodes[u]['type'] == 'endnode' and G.nodes[v]['type'] == 'repeater':
                     if distance <= l_er:
-                        G.add_edge(u, v, type='endnode', len=distance)
+                        G.add_edge(u, v, type='endnode', dis=distance)
                 if G.nodes[u]['type'] == 'repeater' and G.nodes[v]['type'] == 'repeater':
                     if distance <= l_rr:
-                        G.add_edge(u, v, type='repeater', len=distance)
+                        G.add_edge(u, v, type='repeater', dis=distance)
+        ##-graph_plot(G)
+
+        # Do Delaunay Triangulation for all repeater nodes:
+        # Get all repeater nodes
+        repeater_positions = []
+        for node in G.nodes:
+            if G.nodes[node]['type'] == 'repeater':
+                repeater_positions.append(G.nodes[node]['pos'])
+        # Do Delaunay Triangulation
+        points = np.array(repeater_positions)
+        tri = Delaunay(points)
+        endnode_num = len([node for node in G.nodes if G.nodes[node]['type'] == 'endnode'])
+        # Add edges to G
+        for triangle in tri.simplices:
+            for i in range(3):
+                u = triangle[i] + endnode_num
+                v = triangle[(i + 1) % 3] + endnode_num
+                pos1 = G.nodes[u]['pos']
+                pos2 = G.nodes[v]['pos']
+                distance = math.sqrt((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2)
+                if G.nodes[u]['type'] == 'repeater' and G.nodes[v]['type'] == 'repeater':
+                    if distance <= l_rr:
+                        G.add_edge(u, v, type='repeater', dis=distance)
 
                 # plot the graph
+        ##-print("After do Delaunay Triangulation for all repeater nodes:")
+        ##-graph_plot(G)
         for node in G.nodes:
             if G.nodes[node]['type'] == 'endnode' and G.degree(node) == 0:
-                print("endnode not connected to any repeater")
+                ##-print("endnode not connected to any repeater")
                 # connect this endnode to 2-nearest repeaters
                 endnode_pos = G.nodes[node]['pos']
                 nearset_num = 2
@@ -173,7 +175,7 @@ class KmsGa:
                 
 
 
-        graph_plot(G)
+        ##-graph_plot(G)
         #Clustering
         # 获取优化后的 repeater 坐标
         repeater_positions = []
@@ -197,7 +199,7 @@ class KmsGa:
         min_repeaters_num_temp = min_repeaters_num
         repeater_positions_temp = []
         while self.is_legal(P_temp):
-            print("it works for min_repeaters_num_temp:", min_repeaters_num_temp)
+            ##-print("it works for min_repeaters_num_temp:", min_repeaters_num_temp)
             P_best = P_temp
             min_repeaters_num_temp -= 8#1
             for node in P_temp.nodes:
@@ -206,9 +208,9 @@ class KmsGa:
             #P_temp = clustering_repeater(min_repeaters_num_temp, P_temp, repeater_positions_temp)
             P_temp = self.construct_new_graph(P_temp, min_repeaters_num_temp)
             self.optimize_repeater_pos_light(P_temp, [node for node in P_temp.nodes if P_temp.nodes[node]['type'] == 'endnode'], l_er, l_rr)
-            graph_statistics(P_temp)
-            self.plot_and_metrics(P_temp)
-            print("for fine granularity, min_repeaters_num_temp:", min_repeaters_num_temp)
+            ##-graph_statistics(P_temp)
+            ##-self.plot_and_metrics(P_temp)
+            ##-print("for fine granularity, min_repeaters_num_temp:", min_repeaters_num_temp)
 
 
         G = P_best
@@ -216,8 +218,8 @@ class KmsGa:
         # G = P
 
         # print the number of repeaters
-        print("The number of repeaters in start graph:", len([node for node in G.nodes if G.nodes[node]['type'] == 'repeater']))
-        print("The number of endnodes in start graph:", len([node for node in G.nodes if G.nodes[node]['type'] == 'endnode']))
+        ##-print("The number of repeaters in start graph:", len([node for node in G.nodes if G.nodes[node]['type'] == 'repeater']))
+        ##-print("The number of endnodes in start graph:", len([node for node in G.nodes if G.nodes[node]['type'] == 'endnode']))
         # graph_plot(G)
         return G
 
@@ -264,11 +266,11 @@ class KmsGa:
         # demands_satisfied = True
         # if repeaters_connected and edges_all_legal:
         #     demands_satisfied = self.demands.demand_satisfying_test(P, self.demands_list)
-        demands_satisfied = self.demands.demand_satisfying_test(P, self.demands_list)
+        # demands_satisfied = self.demands.demand_satisfying_test(P, self.demands_list)
 
-        if not demands_satisfied:
-            print("Demands not satisfied when repeater node number is ", P.number_of_nodes() - len(endnodes))
-        return edges_all_legal and repeaters_connected and demands_satisfied
+        # if not demands_satisfied:
+        #     print("Demands not satisfied when repeater node number is ", P.number_of_nodes() - len(endnodes))
+        return edges_all_legal and repeaters_connected # and demands_satisfied
 
 
     # 聚类，返回用最小的合法repeaters数量作为clusters数量再做一次clustering后的图

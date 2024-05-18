@@ -6,7 +6,7 @@ from utils import *
 
 
 def G_removed_edges(topo_file_name, failure_rate):
-    readDirName = '../dist/topos/'
+    readDirName = abs_file_path + '/dist/topos/'
     with open(readDirName + topo_file_name, 'r') as file:
         graph_data = json.load(file)
     G = nx.node_link_graph(graph_data)
@@ -25,7 +25,8 @@ def G_removed_edges(topo_file_name, failure_rate):
 
 
 def G_removed_nodes(topo_file_name, failure_rate):
-    readDirName = '../dist/topos_resourced/'
+
+    readDirName = abs_file_path + '/dist/topos_resourced/'
     with open(readDirName + topo_file_name, 'r') as file:
         graph_data = json.load(file)
     G = nx.node_link_graph(graph_data)

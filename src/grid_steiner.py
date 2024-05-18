@@ -27,16 +27,16 @@ def construct_steiner_tree(endnodes_graph_file):
         for node2 in repeaters:
             if node1 != node2:
                 dis = math.sqrt((G.nodes[node1]['pos'][0] - G.nodes[node2]['pos'][0]) ** 2 + (G.nodes[node1]['pos'][1] - G.nodes[node2]['pos'][1]) ** 2)
-                if dis < l_rr:
+                if dis < 500:#l_rr:
                     G.add_edge(node1, node2, dis=dis, type='repeater')
 
     for endnode in endnodes:
         for repeater in repeaters:
             dis = math.sqrt((G.nodes[endnode]['pos'][0] - G.nodes[repeater]['pos'][0]) ** 2 + (G.nodes[endnode]['pos'][1] - G.nodes[repeater]['pos'][1]) ** 2)
-            if dis < l_er:
+            if dis < 500:#l_er:
                 G.add_edge(endnode, repeater, dis=dis, type='endnode')
 
-    #graph_plot(G)
+    # graph_plot(G)
 
     G_steiner_r1 = nx.algorithms.approximation.steiner_tree(G, terminal_nodes=endnodes, weight='dis', method="kou")
     # graph_plot(G_steiner_r1)
@@ -53,10 +53,12 @@ def construct_steiner_tree(endnodes_graph_file):
 
     G = G_final
     # 可视化
-    #graph_plot(G)
+    repeater_node_num = len([node for node in G.nodes if G.nodes[node]['type'] == 'repeater'])
+    # graph_plot(G)
+    # print("Repeater node number: ", repeater_node_num)
 
     # Save the graph to a json file
-    dirPath = './dist/topos/'
+    dirPath = abs_file_path + '/dist/topos/'
     endnode_num, topo_idx = extract_endnode_file_name(endnodes_graph_file)
     with open(dirPath + "steiner-" + str(endnode_num) + '-' + str(topo_idx) + '.json', 'w') as file:
         json.dump(nx.node_link_data(G), file)

@@ -15,3 +15,5 @@ unit_repeater_cost = 1000
 link_failure_rate = [0.01, 0.02, 0.04, 0.08, 0.1]
 
 c_fiber = 200000.0
+
+abs_file_path = "/home/ygan11/quantum_topo_design_2024/topo_gen"
