@@ -3,6 +3,8 @@ import random
 import networkx as nx
 import statistics
 from utils import *
+from config import abs_file_path
+import numpy as np
 
 
 def G_removed_edges(topo_file_name, failure_rate):
@@ -65,7 +67,7 @@ def get_path_statistics(G, k):
         cdf[path_lengths[i]] = i / len(path_lengths)
 
     # Get the average path length
-    avg_path_length = nx.average_shortest_path_length(G_repeater, weight='dis')#statistics.mean(path_lengths)
+    avg_path_length = nx.average_shortest_path_length(G_repeater)#statistics.mean(path_lengths)
     # Get the standard deviation of the path lengths
     std_dev_path_length = statistics.stdev(path_lengths)
     # Get the maximum path length
@@ -84,11 +86,19 @@ def get_path_statistics(G, k):
     plt.show()
 
     # Print the statistics
-    print('Average Path Length:', avg_path_length)
+    print('Average Hop Count:', avg_path_length)
     print('Standard Deviation of Path Lengths:', std_dev_path_length)
-    print('Maximum Path Length:', max_path_length)
-    print('Minimum Path Length:', min_path_length)
+    print('Maximum Hop Number:', max_path_length)
+    print('Minimum Hop Number:', min_path_length)
     print('Average Degree:', avg_degree)
+    print("=====================================")
+    edges_dis = [G_repeater.edges[edge]['dis'] for edge in G_repeater.edges()]
+    print("Average Edge dis:", np.mean(edges_dis))
+    print("Max Edge dis:", max(edges_dis))
+    print("Min Edge dis:", min(edges_dis))
+    # print("Average Edge dis:", np.mean([G_repeater.edges[edge]['dis'] for edge in G_repeater.edges()]))
+
+    print('repeater node number:', len(G_repeater.nodes()))
     print("=====================================")
 
 

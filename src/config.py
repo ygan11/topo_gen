@@ -7,7 +7,7 @@ l_rr = 200#step_size * 4
 l_er = 200#step_size * 3
 
 
-max_single_dis = 150#step_size * 3
+max_single_dis = l_er#step_size * 3
 
 unit_fiber_cost = 1
 unit_repeater_cost = 1000

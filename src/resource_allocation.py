@@ -2,7 +2,7 @@ import json
 import random
 import statistics
 from utils import *
-
+from config import abs_file_path    
 
 def allocate_resource(topo_file_name, k, topo_allocated_file_name):
     readDirName = abs_file_path + '/dist/topos/'

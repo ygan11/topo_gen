@@ -6,6 +6,7 @@ import numpy as np
 from scipy.spatial import Delaunay
 
 from sklearn.cluster import KMeans
+from config import abs_file_path
 
 import random
 import multiprocessing

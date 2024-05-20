@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import json
 import math
 
-from config import *
+from config import grid_size, step_size, l_rr, l_er, unit_fiber_cost, unit_repeater_cost
 from itertools import islice
 
 
@@ -68,6 +68,12 @@ def extract_endnode_file_name(filename):
     # return numEndnodes, topoIdx
     return filename.split('-')[1], filename.split('-')[2].split('.')[0]
 
+def extract_endnode_file_name_differ_map_size(filename):
+    # filename format: endnodesLocs-mapSize-numEndnodes-topoIdx.json
+    # e.g. endnodesLocs-1000-100-1.json
+
+    # return mapSize, numEndnodes, topoIdx
+    return filename.split('-')[1], filename.split('-')[2], filename.split('-')[3].split('.')[0]
 
 def graph_plot(G):
     # color_map = {'endnode': 'blue', 'repeater': 'gold'}
@@ -85,6 +91,7 @@ def graph_plot(G):
     # nx.draw(G, pos, with_labels=False, node_color=node_colors, edge_color=edge_colors, width=0.5, node_size=10)
     label_endnodes = {n: n for n in G.nodes() if G.nodes[n]['type'] == 'endnode'}
     nx.draw(G, pos, with_labels=True, labels=label_endnodes, node_color=node_colors, edge_color=edge_colors, width=0.5, node_size=10)
+    # nx.draw(G, pos, with_labels=True, labels=label_endnodes, width=0.5, node_size=10)
     plt.show()
     # Pause the program until the plot is closed
     #plt.savefig('graph.png')
@@ -362,3 +369,70 @@ def graph_statistics(G):
     print(f'Minimum degree of repeater edges: {min_degree}')
     
 
+
+def read_endnodes_init_grid_graph_with_grid_edges_differ_mapsize(endnodes_graph_file, map_size, grid_size):
+    # Remove all edges
+    # grid.remove_edges_from(G.edges())
+    # Add all edges if the distance between two nodes is less than l_rr
+    # Add all edges if the distance between two nodes is less than l_rr
+    grid = nx.grid_2d_graph(grid_size, grid_size)
+
+    # for node1 in grid.nodes:
+    #     for node2 in grid.nodes:
+    #         if node1 != node2:
+    #             if math.sqrt((node1[0] - node2[0]) ** 2 + (node1[1] - node2[1]) ** 2) < l_rr:
+    #                 grid.add_edge(node1, node2)
+
+    # Calculate the intersection points' 2-D position in a map_sz x map_sz map
+    step_size = map_size / grid_size
+    intersection_points = []
+    for node in grid.nodes:
+        x = (node[0] + 0.5) * step_size
+        y = (node[1] + 0.5) * step_size
+        intersection_points.append((x, y))
+
+    #print(intersection_points)
+
+    # Add nodes to the graph
+    for node, pos in zip(grid.nodes, intersection_points):
+        grid.nodes[node]['pos'] = pos
+        grid.nodes[node]['type'] = 'repeater'
+
+    G = nx.Graph()
+
+    with open(endnodes_graph_file, 'r') as f:
+        endnodes_graph = json.load(f)
+        nodes = endnodes_graph['nodes']
+
+    for node in nodes:
+        if node['type'] == 'endnode':
+            pos = node['pos']
+            num_qubits = node['num_qubits']
+            G.add_node(node['id'], pos=pos, num_qubits=num_qubits, type='endnode')
+    endnodes = [node for node in G.nodes if G.nodes[node]['type'] == 'endnode']
+
+    grid_G_node_mappling = {}
+    # Add repeaters to G
+    id_r = len(endnodes)
+    for node, pos in zip(grid.nodes, intersection_points):
+        grid_G_node_mappling[node] = id_r
+        G.add_node(id_r, pos=pos, type='repeater')
+        id_r += 1
+
+    # Add edges between repeaters in G to form a grid
+    for edges in grid.edges:
+        dis = ((grid.nodes[edges[0]]['pos'][0] - grid.nodes[edges[1]]['pos'][0]) ** 2 + (
+                grid.nodes[edges[0]]['pos'][1] - grid.nodes[edges[1]]['pos'][1]) ** 2) ** 0.5
+        G.add_edge(grid_G_node_mappling[edges[0]], grid_G_node_mappling[edges[1]], type='repeater', dis=dis)
+
+    print(f'Number of nodes in G: {len(G.nodes)}')
+    ##-graph_plot(G)
+
+
+
+
+    # Connect endnodes to repeaters if the distance is less than l_er
+    repeaters = [node for node in G.nodes if G.nodes[node]['type'] == 'repeater']
+
+    # Return the graph and the endnodes
+    return G, endnodes
