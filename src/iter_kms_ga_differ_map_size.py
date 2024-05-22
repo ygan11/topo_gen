@@ -174,7 +174,7 @@ class KmsGaDms:
                 nearset_num = 2
                 candi = []
                 for r in G.nodes:
-                    if G.nodes[r]['type'] == 'repeater' and abs(G.nodes[r]['pos'][0] - endnode_pos[0]) <= 2 * self.step_size and abs(G.nodes[r]['pos'][1] - endnode_pos[1]) <= 2 * step_size:
+                    if G.nodes[r]['type'] == 'repeater' and abs(G.nodes[r]['pos'][0] - endnode_pos[0]) <= 2 * self.step_size and abs(G.nodes[r]['pos'][1] - endnode_pos[1]) <= 2 * self.step_size:
                         candi.append(r)
                 candi.sort(key=lambda x: math.sqrt((G.nodes[x]['pos'][0] - endnode_pos[0]) ** 2 + (G.nodes[x]['pos'][1] - endnode_pos[1]) ** 2))
                 for i in range(min(nearset_num, len(candi))):

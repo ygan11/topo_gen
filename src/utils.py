@@ -7,15 +7,26 @@ from config import grid_size, step_size, l_rr, l_er, unit_fiber_cost, unit_repea
 from itertools import islice
 
 
-def convert_networkx_graph_to_string(G, G_repeater, filename):
+def convert_networkx_graph_to_string(G, G_repeater, filename, graph_type=0, uniform: bool = False, is_greedy: bool = False):
     # Assign the attributes "num_qubits" of G by the attributes "num_qubits" of G_repeater if the node id is the same
     for node in G_repeater.nodes():
         G.nodes[node]["num_qubits"] = G_repeater.nodes[node]["num_qubits"]
 
     # folder_path = "../../quantum_topo_design_2024/QuantumRouting/topo_data/"
-    folder_path = '/home/ygan11/quantum_topo_design_2024/QuantumRouting/topo_data/'
+    if graph_type == 0:
+        folder_path = '/home/ygan11/quantum_topo_design_2024/QuantumRouting/topo_data/'
+    else:   
+        folder_path = '/home/ygan11/quantum_topo_design_2024/QuantumRouting/topo_data/map_size/'
     # replace the file extension with .txt
-    filename = filename.split('.')[0] + '.txt'
+    # if uniform:
+    #     filename = filename.split('-')[0] + '-ru-' + filename.split('-')[1] + "-" + filename.split('-')[2].split('.')[0] + '.txt'
+        # filename = filename.split('.')[0] + '-resource-uniform.txt'
+    # else:  
+    #     filename = filename.split('.')[0] + '.txt'
+    if is_greedy:
+        filename = filename.split('-')[0] + '-rg-' + filename.split('-')[1] + "-" + filename.split('-')[2].split('.')[0] + '.txt'
+    else:
+        filename = filename.split('.')[0] + '.txt'
     with open(folder_path + filename, 'w') as f:
         f.write(f'{len(G.nodes())}\n')
         f.write(f'1.0\n')
@@ -436,3 +447,61 @@ def read_endnodes_init_grid_graph_with_grid_edges_differ_mapsize(endnodes_graph_
 
     # Return the graph and the endnodes
     return G, endnodes
+
+
+def convert_networkx_graph_to_string_greedy(G, G_repeater, filename, graph_type=0):
+    assert graph_type == 0
+    # Assign the attributes "num_qubits" of G by the attributes "num_qubits" of G_repeater if the node id is the same
+    for node in G_repeater.nodes():
+        G.nodes[node]["num_qubits"] = G_repeater.nodes[node]["num_qubits"]
+
+    # folder_path = "../../quantum_topo_design_2024/QuantumRouting/topo_data/"
+
+    folder_path = '/home/ygan11/quantum_topo_design_2024/QuantumRouting/topo_data/'
+    # else:   
+    #     folder_path = '/home/ygan11/quantum_topo_design_2024/QuantumRouting/topo_data/map_size/'
+
+    assert filename.split('-')[0] == 'deepPlace'
+
+    filename = filename.split('-')[0] + '-rg-' + filename.split('-')[1] + "-" + filename.split('-')[2].split('.')[0] + '.txt'
+
+    with open(folder_path + filename, 'w') as f:
+        f.write(f'{len(G.nodes())}\n')
+        f.write(f'1.0\n')
+        f.write(f'0.5\n')
+        f.write(f'6\n')
+
+        # counter = number of endnodes in G
+        counter = len(G.nodes()) - len(G_repeater.nodes())
+        for node in G.nodes():
+            if G.nodes[node]["type"] == "endnode":
+                assert "num_qubits" in G.nodes[node] 
+                f.write(f'{G.nodes[node]["num_qubits"]} {G.nodes[node]["pos"][0]} {G.nodes[node]["pos"][1]} 0\n') # 0 means endnode
+
+        for node in G_repeater.nodes():
+            if G_repeater.nodes[node]["type"] == "repeater":
+                assert "num_qubits" in G_repeater.nodes[node]
+                f.write(
+                    f'{G_repeater.nodes[node]["num_qubits"]} {G_repeater.nodes[node]["pos"][0]} {G_repeater.nodes[node]["pos"][1]} 1\n')
+
+        # Create a mapping from node to index
+        rnode_to_counter = {}
+        # Create a mapping from repeater node id to counter
+        for node in G_repeater.nodes():
+            rnode_to_counter[node] = counter
+            counter += 1
+
+        for edge in G.edges():
+            n1 = edge[0]
+            n2 = edge[1]
+            if G.nodes[n1]["type"] == "repeater":
+                n1 = rnode_to_counter[n1]
+            if G.nodes[n2]["type"] == "repeater":
+                n2 = rnode_to_counter[n2]
+            f.write(f'{n1} {n2} 100\n')
+
+
+    print(f'Graph saved to {folder_path + filename}')
+    # close file
+    f.close()
+
