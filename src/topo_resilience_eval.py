@@ -158,7 +158,7 @@ def convert_networkx_graph_to_string_link_failure(G, G_repeater, filename, failu
         #       #f.write(f'{edge[0]} {edge[1]} 999\n')
         #       f.write(f'{node_to_index[edge[0]]} {node_to_index[edge[1]]} 999\n')
 
-    print(f'Graph saved to {folder_path + filename}')
+    print(f'Link failure Graph saved to {folder_path + filename}')
     # close file
     f.close()
 

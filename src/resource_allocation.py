@@ -98,7 +98,7 @@ def allocate_resource_uniformly(topo_file_name, topo_allocated_file_name, graph_
     if graph_type == 0:
         readDirName = abs_file_path + '/dist/topos/'
     elif graph_type == 1:
-        readDirName = abs_file_path + '/dist/topos/link_failure/'
+        readDirName = abs_file_path + '/dist/topos/'
     else:
         readDirName = abs_file_path + '/dist/topos/map_size/'
     # readDirName = abs_file_path + '/dist/topos/'
@@ -115,13 +115,14 @@ def allocate_resource_uniformly(topo_file_name, topo_allocated_file_name, graph_
 
     # graph_plot(G)
 
-    if type != 1:  # 0: normal, 1: link failure, 2: map size
+    if graph_type != 1:  # 0: normal, 1: link failure, 2: map size
         if topo_file_name.startswith("deepPlace"):
             print("uniform")
             convert_networkx_graph_to_string(G=G, G_repeater=G_repeater, filename=(topo_allocated_file_name), graph_type=graph_type, uniform=True)
         else:
             convert_networkx_graph_to_string(G=G, G_repeater=G_repeater, filename=(topo_allocated_file_name), graph_type=graph_type)
     else:
+        print("link failure")
         link_failure_rates = [0.01, 0.02, 0.04, 0.05, 0.08, 0.1, 0.12, 0.15, 0.18, 0.20, 0.25]#[0.25]#[0.12, 0.15, 0.18, 0.20, 0.25]#[0.01, 0.02, 0.04, 0.05, 0.08, 0.1, 0.12, 0.15, 0.18, 0.20, 0.25]#, 0.12, 0.15, 0.2]
 
         for link_failure_rate in link_failure_rates:
